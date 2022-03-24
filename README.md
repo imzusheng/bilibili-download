@@ -11,6 +11,8 @@
 
 * 音视频合并，无需合成
 
+* 仅供学习使用
+
 ## 安装
 ```bash
 git clone https://gitee.com/imzusheng/bilibili-download.git
