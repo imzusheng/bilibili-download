@@ -3,6 +3,12 @@
   <blockquote>bilibili视频下载Web平台，免登录，支持下载720p、480p、360p</blockquote>
 </div>
 
+<p align="center">
+    <a href="https://demo.zusheng.club/bili_download/">
+        <img src="https://img.shields.io/badge/项目地址-demo.zusheng.club/bili_download-green.svg?style=flat-square" alt="项目地址">
+    </a>
+</p>
+
 ## 注意
 
 * 不需要登录，理论上bilibili上不登陆能看的视频都能下载
@@ -94,6 +100,10 @@ router.get('/proxy', async ctx => {
 ## 版本
 
 v0.0.1 `2022-03-24`
+
+## 演示地址
+
+[https://demo.zusheng.club/bili_download/](https://demo.zusheng.club/bili_download/)
 
 后续整理用到的API
 
