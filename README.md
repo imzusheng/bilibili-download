@@ -12,6 +12,13 @@
 * 音视频合并，无需合成
 
 ## 安装
+```shell
+git clone https://gitee.com/imzusheng/bilibili-download.git
+cd ./bilibili-download
+npm i
+node app
+```
+浏览器中打开`http://localhost:3000`
 
 ## 演示
 
@@ -39,4 +46,6 @@
 ## 版本
 
 v0.0.1 `2022-03-24`
+
+后续整理用到的API
 

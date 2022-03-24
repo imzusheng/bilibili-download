@@ -218,26 +218,8 @@
       supportFormats: [] // 视频支持格式
     },
     mounted() {
-      // this.searchInput = 'https://www.bilibili.com/bangumi/play/ep474224'
-      this.searchInput = 'https://www.bilibili.com/video/BV1xY411n7qp?spm_id_from=333.851.b_7265636f6d6d656e64.1'
+      this.searchInput = 'https://www.bilibili.com/bangumi/play/ep474224'
       this.search()
-      // 动态加载img
-      // const {poster: posterSel, ownerFace: ownerFaceSel} = this.$refs
-      // const url = `http://localhost:3000/proxy?url=${encodeURIComponent(this.listData.videoData.pic)}`
-      // const ownerFaceUrl = `http://localhost:3000/proxy?url=${encodeURIComponent(this.listData.videoData.owner.face)}`
-      // function addImgNode(imgBlob, parentSEL) {
-      //     const imgNode = document.createElement('img')
-      //     const reader = new FileReader()
-      //     reader.onload = e => {
-      //         imgNode.src = e.target.result
-      //         imgNode.alt = '封面'
-      //         parentSEL.prepend(imgNode)
-      //     }
-      //     reader.readAsDataURL(imgBlob)
-      // }
-      //
-      // fetch(url).then(res => res.blob().then(imgBlob => addImgNode(imgBlob, posterSel)))
-      // fetch(ownerFaceUrl).then(res => res.blob().then(imgBlob => addImgNode(imgBlob, ownerFaceSel)))
     },
     methods: {
       // 转换代理url
