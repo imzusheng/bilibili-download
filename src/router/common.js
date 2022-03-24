@@ -50,11 +50,13 @@ router.get('/download', async ctx => {
   }
   
   const resJson = await download()
+  console.log(resJson)
+  const ext = resJson.type || /[A-Za-z]*/g.exec(resJson.format).toString()
   ctx.set({
     'Accept-Ranges': 'bytes',
     'Content-Type': 'application/octet-stream',
     'Content-Length': resJson.durl[0].size,
-    'Content-disposition': `attachment; filename=${bvid}.${resJson.type.toLowerCase()}`
+    'Content-disposition': `attachment; filename=${bvid}.${ext.toLowerCase()}`
   })
   
   const body = request(resJson.durl[0].url, {
