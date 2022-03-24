@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="./assets/style/index.css">
+    <!--<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>-->
+    <script src="assets/vue.js"></script>
+    <title>bilibili</title>
+</head>
+<body>
+<div class="wrap" id="app">
+    <header>
+        <div class="search">
+            <img src="./assets/images/search_ccc.svg" alt="search">
+            <input type="text" id="search" placeholder="输入BV号" v-model.trim.lazy="searchInput"
+                   @keyup.enter="search">
+        </div>
+    </header>
+    <div class="list">
+        <span v-if="loading">暂无数据</span>
+        <div v-else class="list-content">
+            <div class="poster-box">
+                <!-- 此处动态插入封面 refs=poster -->
+                <div class="poster" ref="poster">
+                    <img v-if="curData.cover" :src="convertProxy(curData.cover)" alt="封面">
+                </div>
+            </div>
+            <div class="desc-box">
+                <!-- 标签 -->
+                <div class="desc-tags" v-if="tags.length > 0">
+                    <a :href="item.jump_url" v-for="item in tags" :key="item.tag_id">
+                        #{{ item.tag_name }}
+                    </a>
+                </div>
+                <!-- 标题 -->
+                <div class="desc-title">
+                    <span>{{ curData.title }}</span>
+                    <button>
+                        下载视频
+                        <ul class="desc-btn-select">
+                            <li style="color: rgba(255,255,255,.4)">
+                                <span style="text-decoration:line-through; background: transparent">1080p&nbsp;</span>
+                                &nbsp;需要登录(cookie)
+                            </li>
+                            <li v-for="formats in supportFormats" :value="formats.quality"
+                                @click="download(formats.quality)">
+                                {{ formats.new_description }}&nbsp;({{ formats.size }}M)
+                                &nbsp;<span v-if="curData.badge"
+                                            style="background: transparent; color: rgba(255,255,255,.4)">非会员试看三分钟</span>
+                            </li>
+                        </ul>
+                    </button>
+                </div>
+                <!-- 简介 -->
+                <div class="desc-desc">
+                    <pre>{{ curData.evaluate }}</pre>
+                </div>
+                <!-- 功能按钮 -->
+                <div class="desc-bar">
+                    <div class="vtime">
+                        {{ curData.view }}
+                        <span>·</span>
+                        {{ convertDate(curData.pubTime) }}
+                    </div>
+                    <div class="stats">
+                        <div>
+                            <img src="./assets/images/like.svg" alt="点赞" data-action-like>
+                            &nbsp;{{ stat.like }}
+                        </div>
+                        <div>
+                            <img src="./assets/images/coin.svg" alt="投币">
+                            &nbsp;{{ stat.coin }}
+                        </div>
+                        <div>
+                            <img src="./assets/images/favorite.svg" alt="收藏">
+                            &nbsp;{{ stat.follow }}
+                        </div>
+                        <div v-if="videoType === 'video'">
+                            <img src="./assets/images/share.svg" alt="分享" data-action-share>
+                            &nbsp;{{ stat.share }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="season-box" v-if="videoType !== 'video' && listData?.episodes?.length > 0">
+                <div class="season-title">Season 1-{{ listData.episodes.length }}</div>
+                <ul>
+                    <li v-for="seasonItem in listData.episodes" :key="seasonItem.cid"
+                        @click="toSeason(seasonItem.link)">
+                        <div>
+                            <img :src="convertProxy(seasonItem.cover)" alt="cover">
+                        </div>
+                        <div class="season-desc">
+                            <div class="season-desc-title">第{{ seasonItem.title }}话</div>
+                            <div class="season-desc-long">{{ seasonItem.long_title }}</div>
+                        </div>
+                        <div class="season-badge" v-if="seasonItem.badge">会员</div>
+                    </li>
+                </ul>
+            </div>
+            <div class="auth-box">
+                <!-- 此处插入头像 -->
+                <div style="display: flex">
+                    <div class="auth-avatar" ref="ownerFace">
+                        <img v-if="upData.face" :src="convertProxy(upData.face)" alt="">
+                    </div>
+                    <div class="auth-info">
+                        <div data-auth-name>
+                            {{ upData.name }}&nbsp;&nbsp;
+                            <span v-if="upData.follower">{{ upData.follower }}位订阅者</span>
+                            <span v-else>保密</span>
+                        </div>
+                        <div data-auth-sign>{{ upData.sign }}</div>
+                    </div>
+                </div>
+                <div>
+                    <button>
+                        <a style="background: transparent; color: #fff; text-decoration: none" target="_blank"
+                           :href="`https://space.bilibili.com/${ids.mid}`">主页</a>
+                    </button>
+                </div>
+            </div>
+            <div class="comment-box">
+                <div class="comment-title">{{ hotsComment.length }}条热评</div>
+                <ul>
+                    <li v-for="(commentItem, commentIndex) in hotsComment" :key="commentIndex">
+                        <img class="comment-avatar"
+                             :src="convertProxy(commentItem.member.avatar)"
+                             alt="头像">
+                        <div class="comment-member">
+                            <div class="comment-member-name">
+                                {{ commentItem.member.uname }}
+                                <span>{{ convertDate(commentItem.ctime) }}</span>
+                            </div>
+                            <div class="comment-member-content">
+                                <pre>{{ commentItem.content.message }}</pre>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  /**
+   *
+   * mid 用户id
+   * avid/aid/oid 视频id
+   * cid 视频分p的id
+   *
+   * 下载视频 https://api.bilibili.com/x/player/playurl?avid=211777487&cid=515790608&otype=json&quality=16&qn=16&fnval=16
+   * playurl 获取时各个参数的含义：
+   * avid，即视频 ID。cid，即该视频所对应的内容 ID。
+   * qn，视频质量代码。对应的是 JSON 格式中“accept_quality”这个 list 中的值。
+   * otype：数据的呈现形式。可以是 JSON 或 XML。
+   * type：用途不明。可能跟平台类型有关。
+   * fnver：用途不明。
+   * fnval：控制视频的格式。fnval 为 0 时是 FLV 格式，为 1 时是 MP4 格式，为 16 时是 DASH 序列。
+   * 视频信息 https://api.bilibili.com/x/web-interface/view?aid=211777487  https://api.bilibili.com/x/web-interface/view?bvid=BV1ka411C7vb
+   * 获取视频支持格式 https://api.bilibili.com/x/player/playurl?cid=515790608&avid=211777487
+   * 获取弹幕 https://api.bilibili.com/x/v1/dm/list.so?oid=515790608
+   * 获取评论 https://api.bilibili.com/x/v2/reply?&type=1&oid=211777487
+   * 获取up主粉丝/关注数量 https://api.bilibili.com/x/relation/stat?mid=496049835
+   *
+   * 番剧API
+   * https://api.bilibili.com/pgc/web/season/stat?season_id=32963 点赞信息
+   * https://api.bilibili.com/pgc/review/relate?media_id=28228339 长评和短评各三条
+   * https://api.bilibili.com/pgc/view/web/season?ep_id=317774 获取整季信息
+   *
+   * https://api.bilibili.com/pgc/web/recommend/related/recommend?season_id=34934 推荐番剧/剧集
+   */
+  const app = new Vue({
+    el: '#app',
+    data: {
+      searchInput: '',
+      loading: true,
+      videoType: '', // bangumi、video
+      ids: { // 视频id信息
+        aid: '',
+        oid: '',
+        avid: '',
+        cid: '',
+        mid: '',
+        epid: '',
+        media_id: '',
+        season_id: ''
+      },
+      listData: {}, // 视频信息
+      curData: {
+        link: '', // 原链接
+        title: '', // 标题
+        evaluate: '', // 评价、简介
+        pubTime: '', // 发布时间
+        view: '', // 播放量
+        badge: '', // 是否是会员剧集
+      }, // 当前视频信息
+      upData: {
+        face: '', // 头像
+        name: '', // 名字
+        follower: '', // 关注数量
+        sign: '' // 个性签名
+      }, // up主信息
+      stat: {
+        like: '', // 点赞
+        view: '', // 观看
+        coin: '', // 投币
+        follow: '', // 关注、收藏
+        danmakus: '', // 弹幕
+        series_follow: '', // 系列关注
+      }, // 点赞投币信息
+      tags: [], // 视频标签信息
+      hotsComment: [], // 热评
+      supportFormats: [] // 视频支持格式
+    },
+    mounted() {
+      // this.searchInput = 'https://www.bilibili.com/bangumi/play/ep474224'
+      this.searchInput = 'https://www.bilibili.com/video/BV1xY411n7qp?spm_id_from=333.851.b_7265636f6d6d656e64.1'
+      this.search()
+      // 动态加载img
+      // const {poster: posterSel, ownerFace: ownerFaceSel} = this.$refs
+      // const url = `http://localhost:3000/proxy?url=${encodeURIComponent(this.listData.videoData.pic)}`
+      // const ownerFaceUrl = `http://localhost:3000/proxy?url=${encodeURIComponent(this.listData.videoData.owner.face)}`
+      // function addImgNode(imgBlob, parentSEL) {
+      //     const imgNode = document.createElement('img')
+      //     const reader = new FileReader()
+      //     reader.onload = e => {
+      //         imgNode.src = e.target.result
+      //         imgNode.alt = '封面'
+      //         parentSEL.prepend(imgNode)
+      //     }
+      //     reader.readAsDataURL(imgBlob)
+      // }
+      //
+      // fetch(url).then(res => res.blob().then(imgBlob => addImgNode(imgBlob, posterSel)))
+      // fetch(ownerFaceUrl).then(res => res.blob().then(imgBlob => addImgNode(imgBlob, ownerFaceSel)))
+    },
+    methods: {
+      // 转换代理url
+      convertProxy: url => `http://localhost:3000/proxy?url=${encodeURIComponent(url)}`,
+      // 搜索内容
+      async search() {
+        if (!this.searchInput) return
+        this.tags = this.supportFormats = this.hotsComment = [] // 重置
+        if (this.searchInput.indexOf('bangumi/play') > -1) { // 番剧
+          this.videoType = 'bangumi'
+          await this.getPgcData()
+          this.getPgcStat()
+        } else {
+          this.videoType = 'video' // 个人视频
+          await this.getData()
+          this.getTags(this.ids.aid)
+        }
+        // 获取其他数据
+        this.getComment(this.ids.aid)
+        this.getUpInfo(this.ids.mid)
+        this.getFans(this.ids.mid)
+        this.getFormats(this.ids.cid, this.ids.aid)
+        this.loading = false
+      },
+      // 跳转
+      toSeason(link) {
+        this.searchInput = link
+        this.search()
+      },
+      // 获取视频数据(番剧/电视剧)
+      getPgcData() {
+        return new Promise(resolve => {
+          // 提取处ep_id/season_id
+          const str = this.searchInput
+          const step1 = str.substring(str.indexOf('/play') + 6)  // 去掉头部
+          const step2 = step1.substring(0, 2) // 提取前缀
+          const _id = /[0-9]*/g.exec(step1.substring(2))?.toString() // 提取id
+          let field = ''
+          switch (step2) { // 根据前缀匹配url参数字段是ep_id或season_id
+            case 'ep':
+              field = 'ep_id'
+              break
+            case 'ss':
+              field = 'season_id'
+              break
+          }
+          // 获取数据
+          fetch(this.convertProxy(`https://api.bilibili.com/pgc/view/web/season?${field}=${_id}`)).then(async res => {
+            const resJson = await res.json()
+            this.listData = resJson.result
+            let suc = false
+            resJson.result.episodes.forEach(v => {
+              if (v.id === parseInt(_id)) {
+                match.call(this, v)
+                suc = true
+              }
+            })
+            if (!suc) {
+              match.call(this, resJson.result.episodes[0])
+            }
+
+            // 匹配赋值
+            function match(v) {
+              this.curData = {}
+              this.curData.link = v.link
+              this.curData.badge = v.badge
+              this.curData.cover = v.cover
+              this.curData.view = v.subtitle
+              this.curData.title = v.share_copy
+              this.curData.pubTime = v.pub_time
+              this.curData.evaluate = resJson.result.evaluate
+              this.ids = {}
+              this.ids.aid = v.aid
+              this.ids.bvid = v.bvid
+              this.ids.cid = v.cid
+              this.ids.mid = resJson.result.up_info.mid
+              this.ids.media_id = resJson.result.media_id
+              this.ids.season_id = resJson.result.season_id
+            }
+
+            resolve()
+          })
+        })
+      },
+      // 获取点赞投币信息(番剧/电视剧)
+      getPgcStat() {
+        fetch(this.convertProxy(`https://api.bilibili.com/pgc/web/season/stat?season_id=${this.ids.season_id}`)).then(async res => {
+          const resJson = await res.json()
+          this.stat.like = resJson.result.likes
+          this.stat.coin = resJson.result.coins
+          this.stat.follow = resJson.result.follow
+        })
+      },
+      // 获取视频数据(video)
+      getData() {
+        // `https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`
+        const str = this.searchInput
+        const step1 = str.substring(str.indexOf('/video') + 7) // 去掉头
+        const bvid = /.*\?/g.exec(step1)?.toString().replace('?', '') || step1 // 提取id
+        return new Promise(resolve => {
+          fetch(this.convertProxy(`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`)).then(async res => {
+            const resJson = await res.json()
+            this.listData = resJson.data
+            this.curData = {}
+            this.curData.cover = resJson.data.pic
+            this.curData.view = resJson.data.stat.view
+            this.curData.title = resJson.data.title
+            this.curData.pubTime = resJson.data.ctime
+            this.curData.evaluate = resJson.data.desc
+            this.ids = {}
+            this.ids.aid = resJson.data.aid
+            this.ids.bvid = resJson.data.bvid
+            this.ids.cid = resJson.data.cid
+            this.ids.mid = resJson.data.owner.mid
+            this.stat = {}
+            this.stat.like = resJson.data.stat.like
+            this.curData.view = `已观看${resJson.data.stat.view}次`
+            this.stat.coin = resJson.data.stat.coin
+            this.stat.follow = resJson.data.stat.favorite
+            this.stat.share = resJson.data.stat.share
+            resolve()
+          })
+        })
+      },
+      // 获取用户粉丝数量
+      getFans(mid) {
+        fetch(this.convertProxy(`https://api.bilibili.com/x/relation/stat?vmid=${mid}`)).then(async res => {
+          const resJson = await res.json()
+          this.upData.follower = resJson.data.follower
+        })
+      },
+      // 获取up主信息
+      getUpInfo(mid) {
+        fetch(this.convertProxy(`https://api.bilibili.com/x/space/acc/info?mid=${mid}&jsonp=jsonp`)).then(async res => {
+          const resJson = await res.json()
+          this.upData.face = resJson.data.face
+          this.upData.sign = resJson.data.sign
+          this.upData.name = resJson.data.name
+        })
+      },
+      // 获取评论
+      getComment(oid) {
+        fetch(this.convertProxy(`https://api.bilibili.com/x/v2/reply?&type=1&oid=${oid}`)).then(async res => {
+          const resJson = await res.json()
+          this.hotsComment = []
+          this.hotsComment.push(...resJson.data.hots)
+        })
+      },
+      // 获取视频支持格式
+      getFormats(cid, avid) {
+        const url = this.videoType === 'video' ? 'https://api.bilibili.com/x/player/playurl' : 'https://api.bilibili.com/pgc/player/web/playurl'
+        fetch(this.convertProxy(`${url}?cid=${cid}&avid=${avid}`)).then(async res => {
+          const resJson = await res.json()
+          const data = resJson.data || resJson.result
+          this.supportFormats = []
+          this.supportFormats.push(...data.support_formats.filter(v => v.quality <= 64)) // 没有获得cookie只能下载720
+          this.getVideoSize(avid, cid)
+        })
+      },
+      // 获取视频标签
+      getTags(avid) {
+        fetch(this.convertProxy(`https://api.bilibili.com/x/web-interface/view/detail/tag?aid=${avid}`)).then(async res => {
+          const resJson = await res.json()
+          this.tags = []
+          this.tags.push(...resJson.data)
+        })
+      },
+      // 获取文件大小
+      getVideoSize(avid, cid) {
+        this.supportFormats.forEach(sf => {
+          const url = this.videoType === 'video' ? 'https://api.bilibili.com/x/player/playurl' : 'https://api.bilibili.com/pgc/player/web/playurl'
+          fetch(this.convertProxy(`${url}?avid=${avid}&cid=${cid}&otype=json&qn=${sf.quality}&fnval=0`)).then(async res => {
+            const resJson = await res.json()
+            const data = resJson.data || resJson.result
+            this.$set(sf, 'size', (data.durl[0].size / 1024 / 1024).toFixed(2))
+          })
+        })
+      },
+      // 下载视频
+      download(q) {
+        const url = this.videoType === 'video' ? 'https://api.bilibili.com/x/player/playurl' : 'https://api.bilibili.com/pgc/player/web/playurl'
+        window.open(
+            `http://localhost:3000/api/download?url=${encodeURIComponent(url)}&bvid=${this.ids.bvid}&params=${encodeURIComponent(`avid=${this.ids.aid}&cid=${this.ids.cid}&otype=json&qn=${q}&fnval=0`)}`, '_blank'
+        )
+      }
+    },
+    computed: {
+      convertDate() {
+        return function (date) {
+          const recordDate = new Date(date * 1000)
+          const year = recordDate.getFullYear()
+          const month = recordDate.getMonth() + 1
+          const day = recordDate.getDate()
+          const hours = recordDate.getHours()
+          const minutes = recordDate.getMinutes()
+          return `${year}年${month}月${day}日 ${hours.toString().length === 1 ? '0' + hours : hours}:${minutes.toString().length === 1 ? '0' + minutes : minutes}`
+        }
+      }
+    }
+  })
+</script>
+
+</body>
+</html>
