@@ -14,12 +14,14 @@
 * 仅供学习使用
 
 ## 安装
+
 ```bash
 git clone https://gitee.com/imzusheng/bilibili-download.git
 cd ./bilibili-download
 npm i
 node app
 ```
+
 浏览器中打开`http://localhost:3000`
 
 ## 演示
@@ -27,7 +29,6 @@ node app
 ![1](./screenshots/02.png)
 ![2](./screenshots/03.png)
 ![3](./screenshots/01.png)
-
 
 ## 功能
 
@@ -43,7 +44,52 @@ node app
 * [ ] 下载进度
 
 ## 技术细节
-[https://blog.zusheng.club](https://blog.zusheng.club)
+1. 代理静态资源
+
+在页面中直接调用B站API，浏览器自动往请求头加上`Referer`，B站服务器就拦截掉不符合要求的请求，
+需要通过nodejs代理伪造请求头。假设我要获取一张图片，地址是`http://i0.hdslb.com/bfs/archive/4d1d7bde55218c1971dde8aee51864b5ccfc1f04.jpg`
+
+前端请求
+
+```javascript
+const url = encodeURIComponent('http://i0.hdslb.com/bfs/archive/4d1d7bde55218c1971dde8aee51864b5ccfc1f04.jpg')
+fetch(`http://localhost:3000/proxy?url=${url}`).then(res => {
+    // ...
+})
+```
+
+nodejs代理(koa2)
+
+```javascript
+router.get('/proxy', async ctx => {
+  const {url, headers = {}} = ctx.query
+  
+  function get() {
+    return new Promise(resolve => {
+      https.get(url, {
+        headers: Object.assign(headers, {
+          'Referer': 'https://www.bilibili.com/'
+        })
+      }, response => {
+        // response.setEncoding('utf-8')
+        // 如果设置了编码为'utf-8'时请求JSON，html等文件时正常，图片异常
+        // 不设置setEncoding时默认为Buffer，不编码直接转发到前端
+        ctx.set(response.headers)
+        let chunks = Buffer.alloc(0)
+        response.on('data', data => {
+          // 拼接buffer
+          chunks = Buffer.concat([chunks, data])
+        })
+        response.on('end', () => {
+          resolve(chunks)
+        })
+      })
+    })
+  }
+  
+  ctx.body = await get()
+})
+```
 
 ## 版本
 
