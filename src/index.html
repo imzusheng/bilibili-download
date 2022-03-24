@@ -400,10 +400,7 @@
       },
       // 下载视频
       download(q) {
-        const url = this.videoType === 'video' ? 'https://api.bilibili.com/x/player/playurl' : 'https://api.bilibili.com/pgc/player/web/playurl'
-        window.open(
-            `http://localhost:3900/api/bilibili/download?url=${encodeURIComponent(url)}&bvid=${this.ids.bvid}&params=${encodeURIComponent(`avid=${this.ids.aid}&cid=${this.ids.cid}&otype=json&qn=${q}&fnval=0`)}`, '_blank'
-        )
+        alert('仅演示不提供下载，我的学生服务器带宽无法承受!')
       }
     },
     computed: {
