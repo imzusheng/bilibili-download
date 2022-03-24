@@ -12,7 +12,7 @@
 * 音视频合并，无需合成
 
 ## 安装
-```shell
+```bash
 git clone https://gitee.com/imzusheng/bilibili-download.git
 cd ./bilibili-download
 npm i
@@ -41,7 +41,7 @@ node app
 * [ ] 下载进度
 
 ## 技术细节
-
+[https://blog.zusheng.club](https://blog.zusheng.club)
 
 ## 版本
 
