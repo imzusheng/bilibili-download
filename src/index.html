@@ -246,7 +246,7 @@
     },
     methods: {
       // 转换代理url
-      convertProxy: url => `http://localhost:3900/api/bilibili/proxy?url=${encodeURIComponent(url)}`,
+      convertProxy: url => `https://zusheng.club/api/bilibili/proxy?url=${encodeURIComponent(url)}`,
       // 搜索内容
       async search() {
         if (!this.searchInput) return
@@ -422,14 +422,11 @@
         })
       },
       getDM(){
-        window.open(`http://localhost:3000/api/dm?aid=${this.ids.aid}&cid=${this.ids.cid}`,'_blank')
+        window.open(`https://zusheng.club/api/bilibili/dm?aid=${this.ids.aid}&cid=${this.ids.cid}`,'_blank')
       },
       // 下载视频
       download(q) {
-        const url = this.videoType === 'video' ? 'https://api.bilibili.com/x/player/playurl' : 'https://api.bilibili.com/pgc/player/web/playurl'
-        window.open(
-            `http://localhost:3900/api/bilibili/download?url=${encodeURIComponent(url)}&bvid=${this.ids.bvid}&params=${encodeURIComponent(`avid=${this.ids.aid}&cid=${this.ids.cid}&otype=json&qn=${q}&fnval=0`)}`, '_blank'
-        )
+        alert('仅演示不提供下载，我的学生服务器带宽无法承受!')
       },
       // 跳转url
       toUrl(url) {
