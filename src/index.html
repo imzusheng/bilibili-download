@@ -12,6 +12,7 @@
 </head>
 <body>
 <div class="wrap" id="app">
+    <!-- 搜索栏 s -->
     <header>
         <div class="search">
             <img src="./assets/images/search_ccc.svg" alt="search">
@@ -19,15 +20,49 @@
                    @keyup.enter="search">
         </div>
     </header>
+    <!-- 数据列表 s -->
     <div class="list">
+        <!-- 无数据时 s -->
         <span v-if="loading">暂无数据</span>
+        <!-- 加载数据完成时 s -->
         <div v-else class="list-content">
+            <!-- 封面 s -->
             <div class="poster-box">
                 <!-- 此处动态插入封面 refs=poster -->
                 <div class="poster" ref="poster">
                     <img v-if="curData.cover" :src="convertProxy(curData.cover)" alt="封面">
                 </div>
             </div>
+            <!-- 下载按钮 s -->
+            <div class="download-box">
+                <span>
+                    <button class="download-pic" data-style-Stroke @click="toUrl(curData.cover)">
+                        视频封面
+                    </button>
+                    <button class="download-dm" data-style-Stroke @click="getDM">
+                        提取弹幕
+                    </button>
+                </span>
+                <button class="download-video" data-style-fill>
+                    下载视频
+                    <ul class="desc-btn-select">
+                        <li style="color: rgba(255,255,255,.4)">
+                                    <span
+                                        style="text-decoration:line-through; background: transparent">1080p&nbsp;</span>
+                            &nbsp;需要登录(cookie)
+                        </li>
+                        <li v-for="formats in supportFormats" :value="formats.quality"
+                            @click="download(formats.quality)">
+                            {{ formats.new_description }}&nbsp;({{ formats.size }}M)&nbsp;
+                            <span v-if="curData.badge"
+                                  style="background: transparent; color: rgba(255,255,255,.4)">
+                                        非会员试看三分钟
+                                    </span>
+                        </li>
+                    </ul>
+                </button>
+            </div>
+            <!-- 视频信息 s -->
             <div class="desc-box">
                 <!-- 标签 -->
                 <div class="desc-tags" v-if="tags.length > 0">
@@ -38,21 +73,6 @@
                 <!-- 标题 -->
                 <div class="desc-title">
                     <span>{{ curData.title }}</span>
-                    <button>
-                        下载视频
-                        <ul class="desc-btn-select">
-                            <li style="color: rgba(255,255,255,.4)">
-                                <span style="text-decoration:line-through; background: transparent">1080p&nbsp;</span>
-                                &nbsp;需要登录(cookie)
-                            </li>
-                            <li v-for="formats in supportFormats" :value="formats.quality"
-                                @click="download(formats.quality)">
-                                {{ formats.new_description }}&nbsp;({{ formats.size }}M)
-                                &nbsp;<span v-if="curData.badge"
-                                            style="background: transparent; color: rgba(255,255,255,.4)">非会员试看三分钟</span>
-                            </li>
-                        </ul>
-                    </button>
                 </div>
                 <!-- 简介 -->
                 <div class="desc-desc">
@@ -85,6 +105,7 @@
                     </div>
                 </div>
             </div>
+            <!-- 切换剧集 s -->
             <div class="season-box" v-if="videoType !== 'video' && listData?.episodes?.length > 0">
                 <div class="season-title">Season 1-{{ listData.episodes.length }}</div>
                 <ul>
@@ -101,6 +122,7 @@
                     </li>
                 </ul>
             </div>
+            <!-- up主信息 s -->
             <div class="auth-box">
                 <!-- 此处插入头像 -->
                 <div style="display: flex">
@@ -123,6 +145,7 @@
                     </button>
                 </div>
             </div>
+            <!-- 热评 s -->
             <div class="comment-box">
                 <div class="comment-title">{{ hotsComment.length }}条热评</div>
                 <ul>
@@ -150,8 +173,8 @@
   /**
    *
    * mid 用户id
-   * avid/aid/oid 视频id
-   * cid 视频分p的id
+   * avid/aid 视频id
+   * cid/oid 视频分p的id
    *
    * 下载视频 https://api.bilibili.com/x/player/playurl?avid=211777487&cid=515790608&otype=json&quality=16&qn=16&fnval=16
    * playurl 获取时各个参数的含义：
@@ -398,12 +421,19 @@
           })
         })
       },
+      getDM(){
+        window.open(`http://localhost:3000/api/dm?aid=${this.ids.aid}&cid=${this.ids.cid}`,'_blank')
+      },
       // 下载视频
       download(q) {
         const url = this.videoType === 'video' ? 'https://api.bilibili.com/x/player/playurl' : 'https://api.bilibili.com/pgc/player/web/playurl'
         window.open(
             `http://localhost:3000/api/download?url=${encodeURIComponent(url)}&bvid=${this.ids.bvid}&params=${encodeURIComponent(`avid=${this.ids.aid}&cid=${this.ids.cid}&otype=json&qn=${q}&fnval=0`)}`, '_blank'
         )
+      },
+      // 跳转url
+      toUrl(url) {
+        window.open(this.convertProxy(url), '_blank')
       }
     },
     computed: {
