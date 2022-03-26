@@ -97,6 +97,10 @@ router.get('/proxy', async ctx => {
 })
 ```
 
+2. Nodejs上解码Bilibili Protobuf弹幕
+
+[Nodejs上解码Bilibili Protobuf弹幕](https://blog.zusheng.club/Blog/Detail?_id=623d8f194c5813a16dccfe8f)
+
 ## 版本
 
 v0.0.1 `2022-03-24`
