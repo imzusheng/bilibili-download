@@ -16,6 +16,7 @@
     "koa-body": "^4.2.0",
     "koa-static": "^5.0.0",
     "koa2-cors": "^2.0.6",
+    "protobufjs": "^6.11.2",
     "request": "^2.88.2"
   }
 }
