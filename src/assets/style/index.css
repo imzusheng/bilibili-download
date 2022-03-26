@@ -80,7 +80,7 @@ pre {
     height: 400px;
     object-fit: contain;
     background: #000;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 /* 视频封面容器 */
@@ -180,24 +180,35 @@ pre {
 }
 
 /* 下载按钮 */
-.desc-box .desc-title > button {
+.download-box {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.download-box button {
     padding: 10px 16px;
     white-space: nowrap;
     border: none;
-    /*background: rgb(38, 78, 138);*/
-    background: rgb(204, 0, 0);
     border-radius: 2px;
     cursor: pointer;
-    color: #ffffff;
     position: relative;
     z-index: 2;
 }
 
-.desc-box .desc-title > button:hover > .desc-btn-select {
-    display: block;
+.download-box button[data-style-Stroke] {
+    color: rgb(204, 0, 0);
+    border: 1px solid rgb(204, 0, 0);
+    /*background: rgb(204, 0, 0);*/
 }
 
-.desc-box .desc-title > button > .desc-btn-select {
+.download-box button[data-style-fill] {
+    color: #ffffff;
+    /*background: rgb(38, 78, 138);*/
+    background: rgb(204, 0, 0);
+}
+
+.download-box button[class='download-video'] .desc-btn-select {
     display: none;
     position: absolute;
     top: 100%;
@@ -205,6 +216,10 @@ pre {
     border-radius: 2px;
     background: rgb(89, 89, 89);
     z-index: 1;
+}
+
+.download-box button[class='download-video']:hover .desc-btn-select {
+    display: block;
 }
 
 .desc-btn-select > li {
