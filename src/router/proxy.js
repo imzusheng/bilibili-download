@@ -29,7 +29,6 @@ router.get('/', async ctx => {
         // response.setEncoding('utf-8')
         // response.setEncoding('hex')
         // response.setEncoding('binary')
-        console.log(response)
         ctx.set(response.headers)
         let chunks = Buffer.alloc(0)
         response.on('data', data => {
